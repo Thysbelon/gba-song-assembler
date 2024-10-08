@@ -105,7 +105,7 @@ def compileS(sFilePath): # python doesn't have function hoisting
 				case ".include":
 					if os.path.exists(myKeywords[1][1:-1])==False: # remove quotes from string
 						print("Can't find file", myKeywords[1], """for inclusion. Assembly halted.
-The file,""" myKeywords[1], "must be in the same folder as gba-song-assembler.py")
+The file,""", myKeywords[1], "must be in the same folder as gba-song-assembler.py")
 						quit()
 					compileS(myKeywords[1][1:-1]) # fork out a new compiler
 				case ".global":
