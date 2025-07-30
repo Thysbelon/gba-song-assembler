@@ -1,7 +1,6 @@
 import os, sys, struct, subprocess
 
 #TODO: 
-# Metroid Zero Mission sound table cannot be detected by sappy_detector. Copy VG Music Studio's MP2K.yaml to use as a fallback.
 # Mainline Pokemon and Golden Sun (and metroid zero mission?) may need more testing, but I will leave that to users.
 
 # To write command-line output to a log text file, use "python gba-song-assembler.py ... > log.txt" on Windows (cmd), and "python3 gba-song-assembler.py ... | tee log.txt" on Linux
@@ -158,13 +157,13 @@ The file,""", myKeywords[1], "must be in the same folder as gba-song-assembler.p
 
 
 if len(sys.argv) < 4:
-	print("""usage: assembler-rewrite.py <file.gba> <file.s> <songNumToReplace: number>
+	print("""usage: gba-song-assembler.py <file.gba> <file.s> <songNumToReplace: number>
 options:
---sappy_detector_path <path to directory>  : a path to the directory (a.k.a. folder) that contains the program sappy_detector. *Do not include the filename of sappy_detector*. Also, do not put a slash at the end of the path. Also, if your path contains spaces, please wrap it in quotes. By default, this program looks in "." (the folder from which this program is being run) for sappy_detector.
+--mp2ktool_path <path to directory>  : a path to the directory (a.k.a. folder) that contains the program mp2ktool. *Do not include the filename of mp2ktool*. Also, do not put a slash at the end of the path. Also, if your path contains spaces, please wrap it in quotes. By default, this program looks in "." (the folder from which this program is being run) for mp2ktool.
 --songDataOffset <address>  : The address to which song data will be written. The program calculates this for you based on songNumToReplace by default. If you get a warning that your injected song data is too large, use this option to set songDataOffset to an area of free space in the GBA rom. Free space can be found by looking through the rom with a hex editor. Free space is filled with all 0x00 or 0xFF.
 --voiceGroup <address>  : Address to the instruments that will be used for this song. By default, this is obtained from the header of the song being replaced.
---songTableEntry <address>  : Address to the song's entry in the song table. By default, this is calculated based on the location of the sound table as reported by sappy_detector, and the songNumToReplace.
---soundTableAddress <address>  : Address to the song table (a.k.a. sound table). If this option is set, sappy_detector will not be run. By default, this program runs sappy_detector to obtain the soundTableAddress.
+--songTableEntry <address>  : Address to the song's entry in the song table. By default, this is calculated based on the location of the sound table as reported by mp2ktool, and the songNumToReplace.
+--soundTableAddress <address>  : Address to the song table (a.k.a. sound table). If this option is set, mp2ktool will not be run. By default, this program runs mp2ktool to obtain the soundTableAddress.
 --setSongTableEntryBool <true or false>  : If set, you will not be prompted for input on whether to write the header pointer to the song table entry.
 --debugBool <true or false>  : If true, lots of debug messages will be printed. False by default.
 All addresses must be written in hexadecimal.
@@ -193,7 +192,7 @@ else:
 			continue
 		if sys.argv[arg].startswith('--'):
 			match sys.argv[arg]:
-				case '--sappy_detector_path': # This should function even with spaces.
+				case '--mp2ktool_path': # This should function even with spaces.
 					if os.path.exists(sys.argv[arg+1])==False:
 						print("can't find", sys.argv[arg+1])
 						sys.exit()
@@ -254,20 +253,20 @@ else:
 	watchedLabelOffset=0
 	songTooLargeWarning=False
 	
-	# run sappy_detector to get soundTableAddress, if it was not set with a command-line option.
+	# run mp2ktool to get soundTableAddress, if it was not set with a command-line option.
 	if soundTableAddress=='nothing':
 		# https://www.geeksforgeeks.org/print-output-from-os-system-in-python/
 		# TODO: see if paths containing apostrophes cause issues here
-		# TODO: check if sappy_detector exists at sappyDetectorPath before attempting to run.
+		# TODO: check if mp2ktool exists at sappyDetectorPath before attempting to run.
 		if sys.platform.startswith('win'):
-			sappyDetectorCommand = '"'+sappyDetectorPath+'\\sappy_detector.exe" "'+inGBApath+'"' # backslashes are an escape character, so to write an ordinary backslash, I need to write two backslashes.
+			sappyDetectorCommand = '"'+sappyDetectorPath+'\\mp2ktool.exe" songtable "'+inGBApath+'"' # backslashes are an escape character, so to write an ordinary backslash, I need to write two backslashes.
 		else:
-			sappyDetectorCommand = '"'+sappyDetectorPath+'/sappy_detector" "'+inGBApath+'"'
-		print('sappyDetectorCommand:', sappyDetectorCommand)
+			sappyDetectorCommand = '"'+sappyDetectorPath+'/mp2ktool" songtable "'+inGBApath+'"'
+		print('mp2ktoolCommand:', sappyDetectorCommand)
 		sappyDetectorResult = subprocess.run(sappyDetectorCommand, capture_output=True, text=True, shell=True).stdout
-		# TODO: gracefully handle the error of sappy_detector not finding the song table.
-		sappyDetectorResult = sappyDetectorResult[sappyDetectorResult.find('Song table located at: ')+23:-1]
-		print("sappyDetectorResult:", sappyDetectorResult)
+		# TODO: gracefully handle the error of mp2ktool not finding the song table.
+		#sappyDetectorResult = sappyDetectorResult.replace("\n","")
+		print("mp2ktoolResult:", sappyDetectorResult)
 		soundTableAddress = int(sappyDetectorResult, 16)
 		print('soundTableAddress:', soundTableAddress, '. hex(soundTableAddress):', hex(soundTableAddress))
 	if songTableEntry=='nothing':
